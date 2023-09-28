@@ -3,6 +3,11 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+
+	"log"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 // variables constantes
@@ -63,4 +68,26 @@ func (c *Chip8) emulateCycle() {
 
 	// Passer à prochaine instruction
 	c.programCounter += 2
+}
+
+type Game struct{}
+
+func (g *Game) Update() error {
+	return nil
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	ebitenutil.DebugPrint(screen, "Hello, World!") //display on screen
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	return 320, 240
+}
+
+func main() {
+	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowTitle("CHIP8 EMULATOR") // titre de la fenetre
+	if err := ebiten.RunGame(&Game{}); err != nil {
+		log.Fatal(err)
+	}
 }
