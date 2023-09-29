@@ -77,7 +77,7 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, World!") //display on screen
+	ebitenutil.DebugPrint(screen, "") //display on screen
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -87,7 +87,18 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func main() {
 	ebiten.SetWindowSize(640, 480)
 	ebiten.SetWindowTitle("CHIP8 EMULATOR") // titre de la fenetre
+
+	// Créez une instance de Chip8
+	chip8 := &Chip8{}
+
+	// Chargez la ROM du jeu
+	if err := chip8.loadProgram("game/Tetris.ch8"); err != nil {
+		log.Fatalf("Erreur lors du chargement de la ROM : %v", err)
+	}
+
+	// Lancez l'émulateur
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
 	}
 }
+
