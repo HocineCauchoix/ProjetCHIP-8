@@ -1,84 +1,151 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
-
 	"log"
+	"os"
+	"os/exec"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-// variables constantes
 const (
-	//4 KB de RAM
-	memorySize = 4096
-	//Nb de Commandes = 16
+	// Constantes pour la taille de l'écran et de la mémoire, etc.
+	memorySize   = 4096
 	commandCount = 16
-	//Taille de Stack
-	stackSize = 16
-	//Dimension de l'écran
-	screenSize = 64 * 32
+	stackSize    = 16
+	screenSize   = 64 * 32
 )
 
-// structure du Chip8
+// Structure du Chip8
 type Chip8 struct {
-	memory  [memorySize]byte   //mémoire du Chip8
-	command [commandCount]byte // cmd V0 à VF
-	//uint16 = ints entiers non negatifs de 16 bits
-	indexRegister  uint16            // Opérations pour la mémoire
-	programCounter uint16            // Pointeur du programme en execution
-	stack          [stackSize]uint16 // prise en compte du flow de l'execution du programme
-	stackPointer   byte              //Prise en compte du niveau de stack
-	delayTimer     byte              // temps de délai entre chaque évènement
-	screen         [screenSize]byte  // Taille de l'écran du Chip8
+	// Les champs de la structure Chip8 que vous avez déjà définis
 }
 
-// fonction de chargement d'un programme Chip8 (ROM)
-func (c *Chip8) loadProgram(filename string) error { //instantie programme par le biais d'un autre programme nommé par filename
-	data, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	} // recherche du fichier, si erreur retourner "erreur"
-
-	for i, b := range data {
-		c.memory[i+0x200] = b
-	} // Si fichier trouvé, sauvegarder dans emplacement de mémoire: 0x200
-	return nil // Ensuite retourner 'nil' si chargement effectué
-}
-
-// Fonction qui simule
-func (c *Chip8) emulateCycle() {
-	// Recherche de l'opcode dans la mémoire
-	opcode := uint16(c.memory[c.programCounter])<<8 | uint16(c.memory[c.programCounter+1])
-
-	// Décodage et execution de l'opcode (Si plus de codes, ajouter cases)
-	switch opcode & 0xF000 {
-	case 0x0000:
-		// Implementation 0x0NNN, 0x00E0, 0x00EE opcodes ici
-	case 0x1000:
-		// Implementation 0x1NNN opcode ici
-	// Ajouter des cas pour plus d'opcodes
-	default:
-		fmt.Printf("Unknown opcode: 0x%X\n", opcode)
-	}
-
-	// Maj du timer (si nécessaire)
-
-	// Passer à prochaine instruction
-	c.programCounter += 2
-}
-
-type Game struct{}
-
-func (g *Game) Update() error {
+// Fonction de chargement d'un programme Chip8 (ROM)
+func (c *Chip8) loadProgram(filename string) error {
+	// Implémentez votre fonction de chargement de ROM ici
 	return nil
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "") //display on screen
+// Fonction qui simule un cycle d'exécution
+func (c *Chip8) emulateCycle() {
+	// Implémentez la logique de l'émulation Chip8 ici
 }
+
+type ClickableArea struct {
+	X, Y, Width, Height int
+}
+
+
+type Game struct {
+	chip8          Chip8
+	gameState      string // Peut être "menu", "jeu", "quitter", etc.
+	romLoaded      bool   // Indique si une ROM est chargée
+	selectedOption int    // Option de menu sélectionnée (0: Menu, 1: Jouer, 2: Quitter)
+	selectedColor  color.RGBA // Couleur pour le texte sélectionné
+	menuOptions     []string
+    clickableAreas []ClickableArea
+}
+
+
+func (g *Game) startNewGame() {
+    if !g.romLoaded {
+        // Vérifiez si le fichier jeu.go (ou jeu.ch8) existe dans le répertoire actuel.
+        if _, err := os.Stat("./game/Tetris.ch8"); err == nil {
+            // Exécutez le jeu Go en tant que processus distinct.
+            cmd := exec.Command("go", "run", "./game/Tetris.ch8")
+            cmd.Stdout = os.Stdout
+            cmd.Stderr = os.Stderr
+
+            if err := cmd.Start(); err != nil {
+                log.Fatal(err)
+            }
+
+            // Indiquez que le jeu est chargé et en cours d'exécution.
+            g.romLoaded = true
+        } else {
+            log.Fatal("Le fichier jeu.go n'a pas été trouvé.")
+        }
+    }
+}
+
+func (g *Game) Update() error {
+    if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+        // L'utilisateur appuie sur Échap pour revenir au menu.
+        g.gameState = "menu"
+    }
+
+    if g.gameState == "menu" {
+        if ebiten.IsKeyPressed(ebiten.KeyDown) {
+            g.selectedOption = (g.selectedOption + 1) % 3
+        } else if ebiten.IsKeyPressed(ebiten.KeyUp) {
+            g.selectedOption = (g.selectedOption + 2) % 3
+        } else if ebiten.IsKeyPressed(ebiten.KeyEnter) {
+            // L'utilisateur appuie sur Entrée pour sélectionner une option.
+            if g.selectedOption == 0 {
+                // Option "Menu" sélectionnée : Revenir au menu principal.
+                g.gameState = "menu"
+            } else if g.selectedOption == 1 {
+                // Option "Jouer" sélectionnée : Lancer un nouveau jeu dans une nouvelle fenêtre.
+                g.startNewGame()
+            } else if g.selectedOption == 2 {
+                // Option "Quitter" sélectionnée : Quitter le jeu.
+                os.Exit(0)
+            }
+        }
+    }
+
+    // Gérez d'autres événements de clavier et la logique du jeu ici.
+
+    return nil
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	// Effacez l'écran en utilisant la couleur noire.
+	screen.Fill(color.Black)
+
+	switch g.gameState {
+	case "menu":
+		// Affichez "Hello, World!" en blanc en haut de l'écran.
+		ebitenutil.DebugPrint(screen, "Hello, World!")
+
+		// Affichez les options de menu ("Menu", "Jouer", "Quitter") centrées en blanc.
+		menuOptions := []string{"Menu", "Jouer", "Quitter"}
+
+		// Obtenez la largeur et la hauteur de l'écran.
+		screenWidth, screenHeight := screen.Size()
+
+		// Calculez la position verticale de départ pour centrer les options.
+		startY := (screenHeight - len(menuOptions)*40) / 2
+
+		// Définissez la taille de la police pour le centrage.
+		fontSize := 40
+
+		for i, option := range menuOptions {
+			// Calculez la position horizontale pour centrer le texte.
+			textWidth := len(option) * fontSize / 2
+			x := (screenWidth - textWidth) / 2
+
+			// Calculez la position verticale en fonction de la position de départ.
+			y := startY + i*45
+
+			ebitenutil.DebugPrintAt(screen, option, x, y)
+		}
+
+	case "jeu":
+		// Affichez "Hello, World!" en blanc en haut de l'écran.
+		ebitenutil.DebugPrint(screen, "Hello, World!")
+
+		// Le reste de votre code pour dessiner le jeu va ici.
+
+	default:
+		// Affichez "Hello, World!" en blanc en haut de l'écran.
+		ebitenutil.DebugPrint(screen, "Hello, World!")
+	}
+}
+
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return 320, 240
@@ -86,19 +153,17 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func main() {
 	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle("CHIP8 EMULATOR") // titre de la fenetre
+	ebiten.SetWindowTitle("CHIP8 EMULATOR") // Titre de la fenêtre
 
-	// Créez une instance de Chip8
-	chip8 := &Chip8{}
-
-	// Chargez la ROM du jeu
-	if err := chip8.loadProgram("game/Tetris.ch8"); err != nil {
-		log.Fatalf("Erreur lors du chargement de la ROM : %v", err)
+	game := &Game{
+		chip8:          Chip8{},
+		gameState:      "menu",
+		romLoaded:      false,
+		selectedOption: 0,
 	}
 
-	// Lancez l'émulateur
-	if err := ebiten.RunGame(&Game{}); err != nil {
+	// Exécutez le jeu en utilisant ebiten.RunGame.
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }
-
