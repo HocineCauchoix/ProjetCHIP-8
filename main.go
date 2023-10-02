@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"log"
 
@@ -37,7 +37,7 @@ type Chip8 struct {
 
 // fonction de chargement d'un programme Chip8 (ROM)
 func (c *Chip8) loadProgram(filename string) error { //instantie programme par le biais d'un autre programme nommé par filename
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	} // recherche du fichier, si erreur retourner "erreur"
@@ -56,8 +56,7 @@ func (c *Chip8) emulateCycle() {
 	// Décodage et execution de l'opcode (Si plus de codes, ajouter cases)
 	switch opcode & 0xF000 {
 	case 0x0000:
-		// Implementation 0x0NNN, 0x00E0, 0x00EE opcodes ici
-	case 0x1000:
+		// Implementation 0x0NNN, 0x00E0, 0x00EE opcodes icicase 0x1000:
 		// Implementation 0x1NNN opcode ici
 	// Ajouter des cas pour plus d'opcodes
 	default:
