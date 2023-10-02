@@ -1,10 +1,10 @@
 package main
 
 import (
+	"image/color"
 	"log"
 	"os"
 	"os/exec"
-	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -38,68 +38,66 @@ type ClickableArea struct {
 	X, Y, Width, Height int
 }
 
-
 type Game struct {
 	chip8          Chip8
-	gameState      string // Peut être "menu", "jeu", "quitter", etc.
-	romLoaded      bool   // Indique si une ROM est chargée
-	selectedOption int    // Option de menu sélectionnée (0: Menu, 1: Jouer, 2: Quitter)
+	gameState      string     // Peut être "menu", "jeu", "quitter", etc.
+	romLoaded      bool       // Indique si une ROM est chargée
+	selectedOption int        // Option de menu sélectionnée (0: Menu, 1: Jouer, 2: Quitter)
 	selectedColor  color.RGBA // Couleur pour le texte sélectionné
-	menuOptions     []string
-    clickableAreas []ClickableArea
+	menuOptions    []string
+	clickableAreas []ClickableArea
 }
 
-
 func (g *Game) startNewGame() {
-    if !g.romLoaded {
-        // Vérifiez si le fichier jeu.go (ou jeu.ch8) existe dans le répertoire actuel.
-        if _, err := os.Stat("./game/Tetris.ch8"); err == nil {
-            // Exécutez le jeu Go en tant que processus distinct.
-            cmd := exec.Command("go", "run", "./game/Tetris.ch8")
-            cmd.Stdout = os.Stdout
-            cmd.Stderr = os.Stderr
+	if !g.romLoaded {
+		// Vérifiez si le fichier jeu.go (ou jeu.ch8) existe dans le répertoire actuel.
+		if _, err := os.Stat("./game/Tetris.ch8"); err == nil {
+			// Exécutez le jeu Go en tant que processus distinct.
+			cmd := exec.Command("go", "run", "./game/Tetris.ch8")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 
-            if err := cmd.Start(); err != nil {
-                log.Fatal(err)
-            }
+			if err := cmd.Start(); err != nil {
+				log.Fatal(err)
+			}
 
-            // Indiquez que le jeu est chargé et en cours d'exécution.
-            g.romLoaded = true
-        } else {
-            log.Fatal("Le fichier jeu.go n'a pas été trouvé.")
-        }
-    }
+			// Indiquez que le jeu est chargé et en cours d'exécution.
+			g.romLoaded = true
+		} else {
+			log.Fatal("Le fichier jeu.go n'a pas été trouvé.")
+		}
+	}
 }
 
 func (g *Game) Update() error {
-    if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-        // L'utilisateur appuie sur Échap pour revenir au menu.
-        g.gameState = "menu"
-    }
+	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		// L'utilisateur appuie sur Échap pour revenir au menu.
+		g.gameState = "menu"
+	}
 
-    if g.gameState == "menu" {
-        if ebiten.IsKeyPressed(ebiten.KeyDown) {
-            g.selectedOption = (g.selectedOption + 1) % 3
-        } else if ebiten.IsKeyPressed(ebiten.KeyUp) {
-            g.selectedOption = (g.selectedOption + 2) % 3
-        } else if ebiten.IsKeyPressed(ebiten.KeyEnter) {
-            // L'utilisateur appuie sur Entrée pour sélectionner une option.
-            if g.selectedOption == 0 {
-                // Option "Menu" sélectionnée : Revenir au menu principal.
-                g.gameState = "menu"
-            } else if g.selectedOption == 1 {
-                // Option "Jouer" sélectionnée : Lancer un nouveau jeu dans une nouvelle fenêtre.
-                g.startNewGame()
-            } else if g.selectedOption == 2 {
-                // Option "Quitter" sélectionnée : Quitter le jeu.
-                os.Exit(0)
-            }
-        }
-    }
+	if g.gameState == "menu" {
+		if ebiten.IsKeyPressed(ebiten.KeyDown) {
+			g.selectedOption = (g.selectedOption + 1) % 3
+		} else if ebiten.IsKeyPressed(ebiten.KeyUp) {
+			g.selectedOption = (g.selectedOption + 2) % 3
+		} else if ebiten.IsKeyPressed(ebiten.KeyEnter) {
+			// L'utilisateur appuie sur Entrée pour sélectionner une option.
+			if g.selectedOption == 0 {
+				// Option "Menu" sélectionnée : Revenir au menu principal.
+				g.gameState = "menu"
+			} else if g.selectedOption == 1 {
+				// Option "Jouer" sélectionnée : Lancer un nouveau jeu dans une nouvelle fenêtre.
+				g.startNewGame()
+			} else if g.selectedOption == 2 {
+				// Option "Quitter" sélectionnée : Quitter le jeu.
+				os.Exit(0)
+			}
+		}
+	}
 
-    // Gérez d'autres événements de clavier et la logique du jeu ici.
+	// Gérez d'autres événements de clavier et la logique du jeu ici.
 
-    return nil
+	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -145,7 +143,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		ebitenutil.DebugPrint(screen, "Hello, World!")
 	}
 }
-
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return 320, 240
