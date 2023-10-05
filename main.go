@@ -344,7 +344,7 @@ func main() {
 
 	chip8 := &Chip8{}
 
-	romFileName := "game/1-chip8-logo.ch8"
+	romFileName := "game/invaders.ch8"
 	romData, err := os.ReadFile(romFileName)
 	if err != nil {
 		log.Fatalf("Erreur lors de la lecture du fichier ROM : %v", err)
