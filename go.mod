@@ -1,8 +1,8 @@
-module main.go
+module ProjetCHIP-8
 
 go 1.19
 
-require github.com/hajimehoshi/ebiten/v2 v2.6.0
+require github.com/hajimehoshi/ebiten/v2 v2.6.1
 
 require (
 	github.com/ebitengine/purego v0.5.0 // indirect
