@@ -10,7 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-const (
+const ( //variables constantes
 	memorySize   = 4096
 	commandCount = 16
 	stackSize    = 16
@@ -20,7 +20,7 @@ const (
 	OpcodeDXYN   = 0xD000
 )
 
-type Chip8 struct {
+type Chip8 struct { //Structure du Chip8
 	Register       [16]uint8
 	input          [16]bool
 	soundTimer     byte
@@ -44,15 +44,17 @@ func (c *Chip8) fetchOpcode() {
 }
 
 func (c *Chip8) executeOpcode() bool {
-	fmt.Println("OPCODE : ", c.Opcode&0xF000)
-	switch c.Opcode & 0xF000 {
+	fmt.Println("OPCODE : ", c.Opcode&0xF000) // Affiche le code de l'opcode en cours
+	switch c.Opcode & 0xF000 {                //prend les 4 bits les plus importants de l'opcode
 	case 0x0000:
-		switch c.Opcode & 0x000FF {
+		switch c.Opcode & 0x000FF { //extrait les 8 bits les moins importants de l'opcode
 		case 0x00E0:
-			c.screen = [screenSize]byte{} // Clear the screen
+			// Opcode pour effacer l'écran (CLS)
+			c.screen = [screenSize]byte{}
 			c.programCounter += 2
 			println("CLS")
 		case 0x000E:
+			// Opcode pour le retour d'appel à partir de la sous-routine (RET)
 			if c.stackPointer == 0 {
 				log.Panic("Attempted to return from an empty stack")
 			}
@@ -60,15 +62,18 @@ func (c *Chip8) executeOpcode() bool {
 			c.programCounter = c.stack[c.stackPointer]
 			c.programCounter += 2
 		default:
-			// panicUnknownOpcode(c.Opcode)
+
 		}
 	case 0x1000:
+		// Opcode pour définir le compteur de programme à une adresse spécifique (JP addr)
 		c.programCounter = c.Opcode & 0x0FFF
 	case 0x2000:
+		// Opcode pour appeler une sous-routine (CALL addr)
 		c.stack[c.stackPointer] = c.programCounter
 		c.stackPointer++
 		c.programCounter = c.Opcode & 0x0FFF
 	case 0x3000:
+		// Opcode pour sauter l'instruction suivante si un registre est égal à une valeur (SE Vx, byte)
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		if c.Register[x] == uint8(c.Opcode&0x00FF) {
 			c.programCounter += 4
@@ -76,6 +81,7 @@ func (c *Chip8) executeOpcode() bool {
 			c.programCounter += 2
 		}
 	case 0x4000:
+		// Opcode pour sauter l'instruction suivante si un registre n'est pas égal à une valeur (SNE Vx, byte)
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		if c.Register[x] != uint8(c.Opcode&0x00FF) {
 			c.programCounter += 4
@@ -83,6 +89,7 @@ func (c *Chip8) executeOpcode() bool {
 			c.programCounter += 2
 		}
 	case 0x5000:
+		// Opcode de comparaison entre deux registres.
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		y := uint16((c.Opcode & 0x00F0) >> 4)
 		if c.Register[x] == c.Register[y] {
@@ -91,16 +98,18 @@ func (c *Chip8) executeOpcode() bool {
 			c.programCounter += 2
 		}
 	case 0x6000:
+		// Opcode de chargement d'une valeur immédiate dans un registre.
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		c.Register[x] = uint8(c.Opcode & 0x00FF)
 		println("LD V")
 		c.programCounter += 2
-	// Ajoutez ici les autres opcodes manquants en suivant le modÃ¨le ci-dessus
 	case 0x7000:
+		// Opcode d'addition avec une valeur immédiate.
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		c.Register[x] += uint8(c.Opcode & 0x00FF)
 		c.programCounter += 2
 	case 0x8000:
+		// Opcode de manipulation de registres.
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		y := uint16((c.Opcode & 0x00F0) >> 4)
 		switch c.Opcode & 0x000F {
@@ -117,6 +126,7 @@ func (c *Chip8) executeOpcode() bool {
 			c.Register[x] ^= c.Register[y]
 			c.programCounter += 2
 		case 0x0004:
+			// Opcode d'addition avec retenue.
 			if c.Register[y] > (0xFF - c.Register[x]) {
 				c.Register[0xF] = 1
 			} else {
@@ -125,6 +135,7 @@ func (c *Chip8) executeOpcode() bool {
 			c.Register[x] += c.Register[y]
 			c.programCounter += 2
 		case 0x0005:
+			// Opcode de soustraction avec emprunt.
 			if c.Register[y] > c.Register[x] {
 				c.Register[0xF] = 0
 			} else {
@@ -133,10 +144,12 @@ func (c *Chip8) executeOpcode() bool {
 			c.Register[x] -= c.Register[y]
 			c.programCounter += 2
 		case 0x0006:
+			// Opcode de décalage à droite.
 			c.Register[0xF] = c.Register[x] & 0x1
 			c.Register[x] >>= 1
 			c.programCounter += 2
 		case 0x0007:
+			// Opcode de différence entre Vy et Vx
 			if c.Register[x] > c.Register[y] {
 				c.Register[0xF] = 0
 			} else {
@@ -145,6 +158,7 @@ func (c *Chip8) executeOpcode() bool {
 			c.Register[x] = c.Register[y] - c.Register[x]
 			c.programCounter += 2
 		case 0x000E:
+			// Opcode de décalage à gauche
 			c.Register[0xF] = c.Register[x] >> 7
 			c.Register[x] <<= 1
 			c.programCounter += 2
@@ -152,6 +166,7 @@ func (c *Chip8) executeOpcode() bool {
 			panicUnknownOpcode(c.Opcode)
 		}
 	case 0x9000:
+		// Opcode de saut si les registres Vx et Vy ne sont pas égaux
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		y := uint16((c.Opcode & 0x00F0) >> 4)
 		if c.Register[x] != c.Register[y] {
@@ -160,17 +175,21 @@ func (c *Chip8) executeOpcode() bool {
 			c.programCounter += 2
 		}
 	case 0xA000:
+		// Opcode de chargement de la valeur immédiate dans le registre I
 		c.indexRegister = c.Opcode & 0x0FFF
 		println("LD I")
 		c.programCounter += 2
 	case 0xB000:
+		// Opcode de saut à une adresse en ajoutant la valeur de V0
 		c.programCounter = (c.Opcode & 0x0FFF) + uint16(c.Register[0])
 	case 0xC000:
+		// Opcode de génération d'un nombre aléatoire et de stockage dans Vx
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		randomValue := randomByte()
 		c.Register[x] = randomValue & uint8(c.Opcode&0x00FF)
 		c.programCounter += 2
 	case 0xD000:
+		// Opcode de dessin à l'écran
 		x := uint16(c.Register[(c.Opcode&0x0F00)>>8])
 		y := uint16(c.Register[(c.Opcode&0x00F0)>>4])
 		height := uint16(c.Opcode & 0x000F)
@@ -194,12 +213,14 @@ func (c *Chip8) executeOpcode() bool {
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		switch c.Opcode & 0x00FF {
 		case 0x009E:
+			// Opcode de saut conditionnel si la touche pressée correspond à la valeur dans Vx
 			if c.input[c.Register[x]] {
 				c.programCounter += 4
 			} else {
 				c.programCounter += 2
 			}
 		case 0x00A1:
+			// Opcode de saut conditionnel si la touche pressée ne correspond pas à la valeur dans Vx
 			if !c.input[c.Register[x]] {
 				c.programCounter += 4
 			} else {
@@ -212,9 +233,11 @@ func (c *Chip8) executeOpcode() bool {
 		x := uint16((c.Opcode & 0x0F00) >> 8)
 		switch c.Opcode & 0x00FF {
 		case 0x0007:
+			// Opcode de chargement de la valeur du retard dans Vx
 			c.Register[x] = c.delayTimer
 			c.programCounter += 2
 		case 0x000A:
+			// Opcode d'attente d'une touche et de stockage de sa valeur dans Vx
 			keyPress := false
 			for i := uint8(0); i < 16; i++ {
 				if c.input[i] {
@@ -227,12 +250,15 @@ func (c *Chip8) executeOpcode() bool {
 			}
 			c.programCounter += 2
 		case 0x0015:
+			// Opcode de chargement de la valeur de Vx dans le retard
 			c.delayTimer = c.Register[x]
 			c.programCounter += 2
 		case 0x0018:
+			// Opcode de chargement de la valeur de Vx dans le timer sonore
 			c.soundTimer = c.Register[x]
 			c.programCounter += 2
 		case 0x001E:
+			// Opcode d'ajout de la valeur de Vx à I
 			if c.indexRegister+uint16(c.Register[x]) > 0xFFF {
 				c.Register[0xF] = 1
 			} else {
@@ -241,39 +267,43 @@ func (c *Chip8) executeOpcode() bool {
 			c.indexRegister += uint16(c.Register[x])
 			c.programCounter += 2
 		case 0x0029:
+			// Opcode de chargement de l'emplacement du caractère dans I
 			c.indexRegister = uint16(c.Register[x]) * 0x5
 			c.programCounter += 2
 		case 0x0033:
+			// Opcode de chargement des chiffres décimaux dans la mémoire
 			c.memory[c.indexRegister] = c.Register[x] / 100
 			c.memory[c.indexRegister+1] = (c.Register[x] / 10) % 10
 			c.memory[c.indexRegister+2] = c.Register[x] % 10
 			c.programCounter += 2
 		case 0x0055:
+			// Opcode de sauvegarde des registres V0 à Vx dans la mémoire
 			for i := uint16(0); i <= x; i++ {
 				c.memory[c.indexRegister+i] = c.Register[i]
 			}
 			c.indexRegister += x + 1
 			c.programCounter += 2
 		case 0x0065:
+			// Opcode de chargement des registres V0 à Vx à partir de la mémoire
 			for i := uint16(0); i <= x; i++ {
 				c.Register[i] = c.memory[c.indexRegister+i]
 			}
 			c.indexRegister += x + 1
 			c.programCounter += 2
 		default:
-			panicUnknownOpcode(c.Opcode)
+			panicUnknownOpcode(c.Opcode) // Si l'opcode n'est pas reconnu, génère une erreur
 		}
 	default:
-		panicUnknownOpcode(c.Opcode)
+		panicUnknownOpcode(c.Opcode) // Si l'opcode n'est pas reconnu, génère une erreur
 	}
-	return false
+	return false // Indique que l'exécution normale du programme doit se poursuivre
 }
 
 func panicUnknownOpcode(opcode uint16) {
 	log.Panicf("Unknown opcode %v", opcode)
 }
 
-func (g *Game) Update() error {
+func (g *Game) Update() error { //Mise à jour du jeu
 
 	g.Chip8.fetchOpcode()
 	g.Chip8.executeOpcode()
@@ -296,7 +326,7 @@ type Game struct {
 	Chip8 Chip8
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
+func (g *Game) Draw(screen *ebiten.Image) { //Affichage de l'écran
 	for y := 0; y < 32; y++ {
 		for x := 0; x < 64; x++ {
 			idx := y*64 + x
@@ -311,11 +341,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, "")
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) { //Dimension de la fenêtre
 	return 64, 32
 }
 
-func (c *Chip8) loadProgram(rom []byte) error {
+func (c *Chip8) loadProgram(rom []byte) error { //chargement programme de la mémoire
 	if len(rom) > 0 {
 		fmt.Println("lecture...")
 	}
