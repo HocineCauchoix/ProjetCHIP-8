@@ -10,3 +10,6 @@ Répartition des tâches:
     J: Structures + correction des codes (opcodes + Display)
     T: Répartition des packages + Docu + Structs
     B: Fonction Opcodes + Display
+------------------------------------------------------------
+Comment run le code:
+    go run main.go
