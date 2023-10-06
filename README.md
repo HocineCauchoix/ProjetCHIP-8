@@ -7,8 +7,8 @@ Membres:
 ------------------------------------------------------------
 Répartition des tâches:
     H: Fonction d'Opcodes
-    J: Structures + correction des codes (opcodes + Display)
-    T: Répartition des packages + Docu + Structs
+    J: Structures + correction des codes (opcodes + Display) + répartition fichiers + commentaires
+    T: Répartition des fichiers + Structs 
     B: Fonction Opcodes + Display
 ------------------------------------------------------------
 Comment run le code:
